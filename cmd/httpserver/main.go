@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/Kunal-deve1oper/httpfromtcp/internal/headers"
 	"github.com/Kunal-deve1oper/httpfromtcp/internal/request"
 	"github.com/Kunal-deve1oper/httpfromtcp/internal/response"
 	"github.com/Kunal-deve1oper/httpfromtcp/internal/server"
@@ -60,17 +62,31 @@ func handler(w *response.Writer, r *request.Request) *server.HandlerError {
 			return handlerError
 		}
 		w.WriteStatusLine(response.StatusOk)
-		h.Set("content-length", "text/plain")
+		h.Delete("content-length")
+		h.Set("content-type", "text/plain")
 		h.Set("Transfer-Encoding", "chunked")
+		h.Set("Trailer", "X-Content-SHA256")
+		h.Set("Trailer", "X-Content-Length")
+		fullBody := []byte{}
 		for {
 			buff := make([]byte, 32)
 			n, err := res.Body.Read(buff)
 			if err != nil {
 				break
 			}
+			fullBody = append(fullBody, buff[:n]...)
 			w.WriteChunkedBody(buff[:n])
 		}
-		w.WriteChunkedBodyDone()
+		out := sha256.Sum256(fullBody)
+		if _, ok := h.Get("Trailer"); !ok {
+			w.WriteChunkedBodyDone()
+		} else {
+			tarilers := headers.NewHeaders()
+			tarilers.Set("X-Content-SHA256", string(out[:]))
+			tarilers.Set("X-Content-Length", fmt.Sprintf("%d", len(fullBody)))
+			w.WriteTrailers(tarilers)
+			w.WriteBody([]byte("\r\n"))
+		}
 	} else {
 		body := `<html>
 					<head>
