@@ -3,6 +3,7 @@ package response
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/Kunal-deve1oper/httpfromtcp/internal/headers"
 )
@@ -51,20 +52,15 @@ func GetDefaultHeaders(contentLen int) headers.Headers {
 }
 
 func (w *Writer) WriteHeaders(headers headers.Headers) error {
-	contentLength, ok := headers.Get("content-length")
-	if !ok {
-		contentLength = ""
+	var builder strings.Builder
+
+	for key, value := range headers {
+		builder.WriteString(fmt.Sprintf("%s: %s\r\n", key, value))
 	}
-	connection, ok := headers.Get("connection")
-	if !ok {
-		connection = ""
-	}
-	contentType, ok := headers.Get("content-type")
-	if !ok {
-		contentType = ""
-	}
-	resp := fmt.Sprintf("Content-Length: %s\r\nConnection: %s\r\nContent-Type: %s\r\n\r\n", contentLength, connection, contentType)
-	_, err := w.Data.Write([]byte(resp))
+
+	builder.WriteString("\r\n")
+
+	_, err := w.Data.Write([]byte(builder.String()))
 	return err
 }
 
