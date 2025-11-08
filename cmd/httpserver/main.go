@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"net/http"
@@ -82,7 +83,7 @@ func handler(w *response.Writer, r *request.Request) *server.HandlerError {
 			w.WriteChunkedBodyDone()
 		} else {
 			tarilers := headers.NewHeaders()
-			tarilers.Set("X-Content-SHA256", string(out[:]))
+			tarilers.Set("X-Content-SHA256", hex.EncodeToString(out[:]))
 			tarilers.Set("X-Content-Length", fmt.Sprintf("%d", len(fullBody)))
 			w.WriteTrailers(tarilers)
 			w.WriteBody([]byte("\r\n"))
