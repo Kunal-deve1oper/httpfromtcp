@@ -46,7 +46,7 @@ func handler(w *response.Writer, r *request.Request) *server.HandlerError {
 					</html>`
 		handlerError.WriteError(response.StatusInternalError, body)
 		return handlerError
-	} else if strings.HasPrefix(reqLine, "/httpbin") {
+	} else if strings.HasPrefix(reqLine, "/httpbin/") {
 		res, err := http.Get("https://httpbin.org/" + reqLine[len("/httpbin/"):])
 		if err != nil {
 			body := `<html>
